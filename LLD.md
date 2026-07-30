@@ -1,407 +1,392 @@
-# Low-Level Design (LLD) - EPMEDUAI Task Management Application
+# Low-Level Design (LLD) - Task Manager React Application
 
 ## Document Metadata
 
 | Field | Value |
 |-------|-------|
-| Version | 0.1 |
-| Date | 2026-07-28 |
+| Version | 1.0 |
+| Date | 2026-07-29 |
 | Author | Architecture Assistant |
-| Status | Draft |
+| Status | Approved |
+| Epic | task manager-React (EPMEDUAI) |
+| Summary | To do task |
 
 ---
 
 ## 1. Overview
 
-This Low-Level Design document provides detailed component-level design for the EPMEDUAI Task Management Application, covering data models, component hierarchy, service interactions, and implementation details.
+This Low-Level Design document provides detailed component-level design for the Task Manager React Application, covering data models, component hierarchy, state management, and implementation details.
 
 ---
 
-## 2. Data Model (Entity Relationship Diagram)
+## 2. Project Structure
+
+```
+src/
+├── App.tsx                   # Root component with router
+├── index.tsx                 # Entry point
+├── contextProviders.tsx      # Composed context providers
+├── global.ts                 # Global styles
+├── Components/                # Reusable UI components
+│   ├── TaskList/
+│   ├── TaskItem/
+│   ├── AddTaskForm/
+│   ├── FilterBar/
+│   ├── CategorySidebar/
+│   └── ConfirmModal/
+├── Pages/                    # Page-level components
+│   ├── LoginPage/
+│   └── HomePage/
+├── Contexts/                 # React Context providers
+│   ├── AuthContext.tsx
+│   ├── TaskContext.tsx
+│   └── FilterContext.tsx
+├── Routes/                   # Route configuration & guards
+│   ├── ProtectedRoute.tsx
+│   └── PublicOnlyRoute.tsx
+└── Img/                      # Static assets
+```
+
+---
+
+## 3. Data Model (Entity Relationship Diagram)
 
 ```mermaid
 erDiagram
-    USER {
-        uuid id PK
-        string username
-        string email
-        string password_hash
-        string role
-        timestamp created_at
-        timestamp updated_at
-    }
     TASK {
-        uuid id PK
-        uuid user_id FK
+        string id PK
         string title
-        string description
+        string category
         boolean completed
-        enum priority
-        date due_date
-        timestamp created_at
-        timestamp updated_at
+        string createdAt
     }
-    USER ||--o{ TASK : "owns"
+    AUTH_STATE {
+        boolean signedIn
+    }
+    FILTER_STATE {
+        enum status
+        string category
+    }
+    AUTH_STATE  ||--o{ TASK : "guards access to"
+    FILTER_STATE ||--o{ TASK : "filters"
 ```
 
 ---
 
-## 3. Frontend Component Hierarchy
+## 4. Frontend Component Hierarchy
 
 ```mermaid
 graph TD
-    App --> ThemeProvider
-    ThemeProvider --> AuthProvider
+    App --> ContextProviders
+    ContextProviders --> AuthProvider
+    ContextProviders --> TaskProvider
+    ContextProviders --> FilterProvider
     AuthProvider --> Router
-    Router --> LoginPage
-    Router --> DashboardPage
-    Router --> TaskListPage
+    Router --> ProtectedRoute
+    Router --> PublicOnlyRoute
+    PublicOnlyRoute --> LoginPage
+    ProtectedRoute --> HomePage
     
-    DashboardPage --> StatsCard[StatsCard Component]
-    DashboardPage --> AISummary[AI Summary Component]
-    
-    TaskListPage --> TaskFilter[TaskFilter Component]
-    TaskListPage --> TaskItem[TaskItem Component]
-    TaskListPage --> TaskForm[TaskForm Modal]
-    
-    TaskItem --> PriorityBadge
-    TaskItem --> DueDateLabel
-    TaskItem --> StatusToggle
+    HomePage --> CategorySidebar
+    HomePage --> FilterBar
+    HomePage --> AddTaskForm
+    HomePage --> TaskList
+    TaskList --> TaskItem
+    TaskItem --> CheckboxToggle
+    TaskItem --> DeleteButton
+    DeleteButton --> ConfirmModal
 ```
 
 ---
 
-## 4. Frontend Component Details
+## 5. Component Details
 
-### 4.1 ThemeProvider
+### 5.1 LoginPage
 
 | Property | Detail |
 |----------|--------|
-| State | `theme: 'light' \| 'dark'` |
-| Persistence | `localStorage.getItem('theme')` |
-| Method | `toggleTheme()` – switches and persists |
+| Route | `/login` |
+| Guard | PublicOnlyRoute (redirects to `/` if signedIn) |
+| Actions | Sign In button → sets `signedIn = true` → navigate to `/` |
+| Styling | Centered card with app logo |
 
-### 4.2 TaskForm Component
+### 5.2 HomePage
+
+| Property | Detail |
+|----------|--------|
+| Route | `/` |
+| Guard | ProtectedRoute (redirects to `/login` if not signedIn) |
+| Layout | Sidebar (categories) + Main content (task list) |
+| Children | CategorySidebar, FilterBar, AddTaskForm, TaskList |
+
+### 5.3 AddTaskForm
 
 | Field | Type | Validation |
 |-------|------|------------|
-| title | text input | Required, max 100 chars |
-| description | textarea | Optional, max 500 chars |
-| priority | select dropdown | Low/Medium/High; default Medium |
-| dueDate | date picker | Optional; must be today or future |
+| title | text input | Required, non-empty, trimmed |
+| category | select dropdown / text | Required |
 
-### 4.3 StatsCard Component
+### 5.4 TaskItem
 
-Displays dashboard statistics:
+| Element | Behavior |
+|---------|----------|
+| Checkbox | Toggles `completed` status |
+| Title | Strikethrough when completed |
+| Category Badge | Displays category label |
+| Delete Button | Opens ConfirmModal |
+
+### 5.5 FilterBar
+
+| Filter | Options |
+|--------|---------|
+| Status | All / Done / Not Done |
+
+### 5.6 CategorySidebar
+
+| Property | Detail |
+|----------|--------|
+| Data Source | Derived from unique categories in task list |
+| Behavior | Click category → updates filter state |
+| "All" Option | Resets category filter |
+
+### 5.7 ConfirmModal
+
+| Property | Detail |
+|----------|--------|
+| Trigger | Delete button on TaskItem |
+| Content | "Are you sure you want to delete this task?" |
+| Actions | Confirm (deletes task) / Cancel (closes modal) |
+| Accessibility | Focus trap, Escape to close, aria-modal |
+
+---
+
+## 6. State Management Design
+
+### 6.1 AuthContext
 
 ```typescript
-interface DashboardStats {
-  total: number;
-  active: number;
-  completed: number;
-  overdue: number;
-  highPriority: number;
+interface AuthState {
+  signedIn: boolean;
+}
+
+interface AuthContextValue {
+  state: AuthState;
+  signIn: () => void;
+  signOut: () => void; // optional
 }
 ```
 
-### 4.4 AI Summary Component
+### 6.2 TaskContext
 
-| State | Behavior |
-|-------|----------|
-| Idle | Shows "Generate Summary" button |
-| Loading | Shows spinner/skeleton |
-| Success | Displays summary text |
-| Error | Displays friendly error message with retry button |
-
----
-
-## 5. Backend Service Layer Design
-
-### 5.1 Package Structure
-
-```
-src/main/java/com/epmeduai/
-├── controller/
-│   ├── TaskController.java
-│   ├── DashboardController.java
-│   └── AiSummaryController.java
-├── service/
-│   ├── TaskService.java
-│   ├── DashboardService.java
-│   └── AiSummaryService.java
-├── model/
-│   ├── Task.java
-│   └── User.java
-├── repository/
-│   ├── TaskRepository.java
-│   └── UserRepository.java
-├── dto/
-│   ├── TaskRequestDto.java
-│   ├── TaskResponseDto.java
-│   └── DashboardStatsDto.java
-├── security/
-│   ├── JwtTokenProvider.java
-│   └── SecurityConfig.java
-├── ai/
-│   ├── AiProvider.java (interface)
-│   ├── OpenAiProvider.java
-│   └── MockAiProvider.java
-└── exception/
-    ├── GlobalExceptionHandler.java
-    └── ResourceNotFoundException.java
-```
-
-### 5.2 Task Entity
-
-```java
-@Entity
-@Table(name = "tasks")
-public class Task {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @Column(nullable = false)
-    private UUID userId;
-
-    @NotBlank(size = @Size(max = 100))
-    private String title;
-
-    @Size(max = 500)
-    private String description;
-
-    private boolean completed = false;
-
-    @Enumerated(EnumType.STRING)
-    private Priority priority = Priority.MEDIUM;
-
-    private LocalDate dueDate;
-
-    @CreationTimestamp
-    private Instant createdAt;
-
-    @UpdateTimestamp
-    private Instant updatedAt;
+```typescript
+interface Task {
+  id: string;
+  title: string;
+  category: string;
+  completed: boolean;
+  createdAt: string;
 }
 
-public enum Priority {
-    LOW, MEDIUM, HIGH
+type TaskAction =
+  | { type: 'TASK_ADD'; payload: Omit<Task, 'id' | 'createdAt'> }
+  | { type: 'TASK_TOGGLE'; payload: { id: string } }
+  | { type: 'TASK_DELETE'; payload: { id: string } };
+
+interface TaskContextValue {
+  tasks: Task[];
+  dispatch: React.Dispatch<TaskAction>;
 }
 ```
 
-### 5.3 Task Service
+### 6.3 FilterContext
 
-```java
-@Service
-public class TaskService {
+```typescript
+type StatusFilter = 'ALL' | 'DONE' | 'NOT_DONE';
 
-    public List<TaskResponseDto> getTasksForUser(UUID userId, TaskFilter filter);
-    public TaskResponseDto createTask(UUID userId, TaskRequestDto request);
-    public TaskResponseDto updateTask(UUID userId, UUID taskId, TaskRequestDto request);
-    public void deleteTask(UUID userId, UUID taskId);
+interface FilterState {
+  status: StatusFilter;
+  category: string; // 'ALL' or specific category
+}
+
+interface FilterContextValue {
+  filters: FilterState;
+  setStatusFilter: (status: StatusFilter) => void;
+  setCategoryFilter: (category: string) => void;
 }
 ```
 
-### 5.4 AI Provider Interface
+### 6.4 Task Reducer Logic
 
-```java
-public interface AiProvider {
-    String generateTaskSummary(List<TaskSummaryInput> tasks);
+```typescript
+function taskReducer(state: Task[], action: TaskAction): Task[] {
+  switch (action.type) {
+    case 'TASK_ADD':
+      return [...state, {
+        ...action.payload,
+        id: crypto.randomUUID(),
+        completed: false,
+        createdAt: new Date().toISOString(),
+      }];
+    case 'TASK_TOGGLE':
+      return state.map(task =>
+        task.id === action.payload.id
+          ? { ...task, completed: !task.completed }
+          : task
+      );
+    case 'TASK_DELETE':
+      return state.filter(task => task.id !== action.payload.id);
+    default:
+      return state;
+  }
 }
+```
 
-public record TaskSummaryInput(
-    String title,
-    boolean completed,
-    Priority priority,
-    LocalDate dueDate
-) {}
+### 6.5 Filtered Tasks Selector
+
+```typescript
+function getFilteredTasks(tasks: Task[], filters: FilterState): Task[] {
+  return tasks.filter(task => {
+    const matchesStatus =
+      filters.status === 'ALL' ||
+      (filters.status === 'DONE' && task.completed) ||
+      (filters.status === 'NOT_DONE' && !task.completed);
+    const matchesCategory =
+      filters.category === 'ALL' || task.category === filters.category;
+    return matchesStatus && matchesCategory;
+  });
+}
 ```
 
 ---
 
-## 6. Sequence Diagrams
+## 7. Sequence Diagrams
 
-### 6.1 Create Task Flow
+### 7.1 Sign In Flow
 
 ```mermaid
 sequenceDiagram
-    participant UI as React SPA
-    participant API as Spring Boot API
-    participant DB as PostgreSQL
+    participant U as User
+    participant LP as LoginPage
+    participant AC as AuthContext
+    participant R as Router
 
-    UI->>API: POST /api/tasks (JWT + TaskRequestDto)
-    API->>API: Validate JWT token
-    API->>API: Validate request body (Bean Validation)
-    API->>API: Apply defaults (priority=MEDIUM)
-    API->>DB: INSERT task record
-    DB-->>API: Saved entity
-    API-->>UI: 201 Created + TaskResponseDto
-    UI->>UI: Update task list & dashboard counts
+    U->>LP: Click "Sign In"
+    LP->>AC: signIn()
+    AC->>AC: Set signedIn = true
+    AC-->>R: State update triggers re-render
+    R-->>U: Navigate to HomePage (/)
 ```
 
-### 6.2 AI Task Summary Flow
+### 7.2 Add Task Flow
 
 ```mermaid
 sequenceDiagram
-    participant UI as React SPA
-    participant API as Spring Boot API
-    participant AI as AI Gateway
-    participant LLM as External LLM
+    participant U as User
+    participant F as AddTaskForm
+    participant TC as TaskContext
+    participant TL as TaskList
 
-    UI->>API: POST /api/ai/task-summary (JWT)
-    API->>API: Validate JWT + Rate Limit Check
-    API->>API: Load user tasks from DB
-    API->>AI: Send redacted task data
-    AI->>AI: Build prompt (title, status, priority, dueDate only)
-    AI->>LLM: HTTPS request with prompt
-    alt Success
-        LLM-->>AI: Summary response
-        AI-->>API: Summary text
-        API-->>UI: 200 OK + summary payload
-    else Timeout/Error
-        LLM-->>AI: Error/Timeout
-        AI-->>API: Fallback error
-        API-->>UI: 503 Service Unavailable + friendly message
+    U->>F: Enter title + category
+    U->>F: Submit form
+    F->>F: Validate input
+    alt Valid
+        F->>TC: dispatch(TASK_ADD)
+        TC->>TC: Reducer adds task
+        TC-->>TL: Re-render with new task
+    else Invalid
+        F-->>U: Show validation error
     end
 ```
 
----
-
-## 7. Database Schema (DDL)
-
-```sql
-CREATE TABLE users (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username    VARCHAR(50) NOT NULL UNIQUE,
-    email       VARCHAR(100) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    role        VARCHAR(20) NOT NULL DEFAULT 'USER',
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE tasks (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title       VARCHAR(100) NOT NULL,
-    description VARCHAR(500),
-    completed   BOOLEAN NOT NULL DEFAULT FALSE,
-    priority    VARCHAR(10) NOT NULL DEFAULT 'MEDIUM',
-    due_date    DATE,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX idx_tasks_user_id ON tasks(user_id);
-CREATE INDEX idx_tasks_priority ON tasks(priority);
-CREATE INDEX idx_tasks_due_date ON tasks(due_date);
-```
-
----
-
-## 8. API Endpoint Detailed Specifications
-
-### 8.1 POST /api/tasks
-
-**Request Body:**
-
-```json
-{
-  "title": "Complete project report",
-  "description": "Finalize Q3 report for management",
-  "priority": "HIGH",
-  "dueDate": "2026-08-15"
-}
-```
-
-**Response (201 Created):**
-
-```json
-{
-  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "title": "Complete project report",
-  "description": "Finalize Q3 report for management",
-  "completed": false,
-  "priority": "HIGH",
-  "dueDate": "2026-08-15",
-  "createdAt": "2026-07-28T12:00:00Z"
-}
-```
-
-### 8.2 GET /api/dashboard/stats
-
-**Response (200 OK):**
-
-```json
-{
-  "total": 25,
-  "active": 18,
-  "completed": 7,
-  "overdue": 3,
-  "highPriority": 5
-}
-```
-
-### 8.3 POST /api/ai/task-summary
-
-**Response (200 OK):**
-
-```json
-{
-  "summary": "You have 25 tasks. 3 are overdue and 5 are high priority. Consider focusing on...",
-  "generatedAt": "2026-07-28T12:00:00Z",
-  "tokensUsed": 150
-}
-```
-
-**Error Response (503):**
-
-```json
-{
-  "error": "AI_SERVICE_UNAVAILABLE",
-  "message": "Unable to generate summary at this time. Please try again later."
-}
-```
-
----
-
-## 9. Error Handling Strategy
-
-| HTTP Code | Scenario | Response |
-|-----------|-----------|----------|
-| 400 | Validation failure | Field-level error messages |
-| 401 | Missing/invalid JWT | "Authentication required" |
-| 403 | Access denied (not owner) | "You do not have permission" |
-| 404 | Task not found | "Task not found" |
-| 429 | AI rate limit exceeded | "Please wait before requesting another summary" |
-| 503 | AI service unavailable | "Summary service temporarily unavailable" |
-
----
-
-## 10. Security Implementation Details
-
-### 10.1 JWT Token Structure
-
-```json
-{
-  "sub": "user-uuid",
-  "role": "USER",
-  "iat": 1722160000,
-  "exp": 1722163600
-}
-```
-
-### 10.2 Security Filter Chain
+### 7.3 Delete Task with Confirmation
 
 ```mermaid
-flowchart LR
-    A[HTTP Request] --> B[CORS Filter]
-    B --> C[JWT Authentication Filter]
-    C -- Valid Token --> D[Authorization Check]
-    C -- Invalid --> E[401 Response]
-    D -- Authorized --> F[Controller]
-    D -- Denied --> G[403 Response]
+sequenceDiagram
+    participant U as User
+    participant TI as TaskItem
+    participant M as ConfirmModal
+    participant TC as TaskContext
+
+    U->>TI: Click delete button
+    TI->>M: Open modal
+    alt User confirms
+        U->>M: Click "Confirm"
+        M->>TC: dispatch(TASK_DELETE)
+        TC->>TC: Reducer removes task
+        M-->>TI: Close modal
+    else User cancels
+        U->>M: Click "Cancel" or press Esc
+        M-->>TI: Close modal (nn change)
+    end
 ```
+
+### 7.4 Filtering Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FB as FilterBar/Sidebar
+    participant FC as FilterContext
+    participant TL as TaskList
+
+    U->>FB: Select status or category
+    FB->>FC: setStatusFilter() or setCategoryFilter()
+    FC->>FC: Update filter state
+    FC-->>TL: Re-render with filtered tasks
+    TL-->>U: Display filtered results
+```
+
+---
+
+## 8. Routing Configuration
+
+```typescript
+// App.tsx
+const App = () => (
+  <BrowserRouter>
+    <Routes>
+      <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+      <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+    </Routes>
+  </BrowserRouter>
+);
+ // ProtectedRoute.tsx
+const ProtectedRoute = ({ children }) => {
+  const { state } = useAuth();
+  return state.signedIn ? children : <Navigate to="/login" />;
+};
+
+// PublicOnlyRoute.tsx
+const PublicOnlyRoute = ({ children }) => {
+  const { state } = useAuth();
+  return !state.signedIn ? children : <Navigate to="/" />;
+};
+```
+
+---
+
+## 9. Styling Approach
+
+| Aspect | Approach |
+|--------|----------|
+| Library | Styled Components |
+| Global Styles | `createGlobalStyle` in `global.ts` |
+| Theming | ThemeProvider (future dark mode) |
+| Responsive | Media queries for tablet/desktop |
+| Component Styles | Co-located `styles.ts` per component folder |
+
+---
+
+## 10. Error Handling & Edge Cases
+
+| Scenario | Handling |
+|----------|----------|
+| Empty task title | Inline validation message; prevent submit |
+| Missing category | Inline validation message; prevent submit |
+| Zero filtered results | Empty state UI ("No tasks found") |
+| Delete last task | Show empty state after deletion |
+| Browser refresh | State resets (in-memory); optional localStorage |
+| Modal accessibility | Focus trap, Escape to close, aria attributes |
 
 ---
 
@@ -409,20 +394,23 @@ flowchart LR
 
 | Layer | Tool | Coverage Target |
 |-------|------|------------------|
-| Unit Tests | JUnit 5 + Mockito | > 80% service layer |
-| Integration Tests | Spring Boot Test + Testcontainers | API endpoints |
-| Frontend Tests | Jest + React Testing Library | Component behavior |
-| E2E Tests | Playwright | Critical user flows |
+| Unit Tests | Jest + React Testing Library | Reducers, utilities, component behavior |
+| Integration Tests | React Testing Library | Page-level flows with context |
+| E2E Tests | Playwright | Login redirect, add/toggle/delete, filtering |
 
 ---
 
 ## 12. Implementation Readiness Checklist
 
-- [ ] DB migration for `priority` and `due_date` columns
-- [ ] Server-side validation (task title, user password) + standardized errors
-- [ ] RBAC annotations and ownership checks on all endpoints
-- [ ] UI: forms for priority/due date; overdue indicator
-- [ ] Dashboard stats component + API hookup
-- [ ] Theme provider + persistence
-- [ ] AI gateway abstraction + mock provider + graceful error UX
-- [ ] Observability: request IDs, metrics, tracing
+- [ ] AuthContext with signIn action
+- [ ] ProtectedRoute and PublicOnlyRoute guards
+- [ ] LoginPage with Sign In button
+- [ ] TaskContext with reducer (ADD/TOGGLE/DELETE)
+- [ ] AddTaskForm with validation
+- [ ] TaskList + TaskItem components
+- [ ] ConfirmModal for delete
+- [ ] FilterBar (status) + CategorySidebar
+- [ ] FilterContext with combined filtering logic
+- [ ] Empty state UI for zero results
+- [ ] Unit tests for reducers and filter logic
+- [ ] Playwright E2E tests for critical flows

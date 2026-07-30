@@ -1,19 +1,21 @@
-# Wireframes - EPMEDUAI Task Management Application
+# Wireframes - Task Manager React Application
 
 ## Document Metadata
 
 | Field | Value |
 |-------|-------|
-| Version | 0.1 |
-| Date | 2026-07-28 |
+| Version | 1.0 |
+| Date | 2026-07-29 |
 | Author | Architecture Assistant |
-| Status | Draft |
+| Status | Approved |
+| Epic | task manager-React (EPMEDUAI) |
+| Summary | To do task |
 
 ---
 
 ## 1. Overview
 
-This document provides wireframe representations for the key screens of the EPMEDUAI Task Management Application. Each wireframe describes the layout, components, and user interactions for each screen.
+This document provides wireframe representations for the key screens of the Task Manager React Application. Each wireframe describes the layout, components, and user interactions for each screen.
 
 ---
 
@@ -21,11 +23,11 @@ This document provides wireframe representations for the key screens of the EPME
 
 | # | Screen | Description |
 |---|--------|-------------|
-| 1 | Login Page | User authentication |
-| 2 | Dashboard | Statistics overview + AI summary |
-| 3 | Task List | Main task management view |
-| 4 | Task Form (Create/Edit) | Modal for task creation/editing |
-| 5 | Dark Mode Variant | Theme toggle demonstration |
+| 1 | Login Page | Simulated user authentication |
+| 2 | Home Page | Main task management view with sidebar + task list |
+| 3 | Add Task Form | Inline form for task creation |
+| 4 | Confirm Delete Modal | Confirmation dialog before deletion |
+| 5 | Empty State | Zero tasks / zero filtered results |
 
 ---
 
@@ -34,233 +36,198 @@ This document provides wireframe representations for the key screens of the EPME
 ```
 ┌────────────────────────────────────────────────┐
 │                                                │
-│                 📋 EPMEDUAI Tasks                │
+│                 📋 Task Manager                │
+│                                                 │
+│     ┌──────────────────────────────────┐     │
+│     │                                        │     │
+│     │   Welcome back!                      │     │
+│     │                                        │     │
+│     │   ┌────────────────────────────┐   │     │
+│     │   │        SIGN IN             │   │     │
+│     │   └────────────────────────────┘    │     │
+│     │                                        │     │
+│     └──────────────────────────────────┘     │
 │                                                │
-│     ┌────────────────────────────────┐     │
-│     │                                       │     │
-│     │   Username                           │     │
-│     │   ┌──────────────────────────┐   │     │
-│     │   │                                │   │     │
-│     │   └──────────────────────────┘   │     │
-│     │                                        │     │
-│     │   Password                             │     │
-│     │   ┌──────────────────────────┐   │     │
-│     │   │  ••••••••                   │   │     │
-│     │   └──────────────────────────┘   │     │
-│     │                                        │     │
-│     │   ┌──────────────────────────┐   │     │
-│     │   │          LOG IN             │   │     │
-│     │   └──────────────────────────┘   │     │
-│     │                                       │     │
-│     └────────────────────────────────┘     │
-│                                              │
 └────────────────────────────────────────────────┘
 ```
 
 **Components:**
-- App logo and title
-- Username input field
-- Password input field (masked)
-- Login button (primary action)
+- App logo and title (📋 Task Manager)
+- Welcome message
+- Sign In button (primary action)
+- No username/password fields (simulated auth)
+
+**Behavior:**
+- Click "Sign In" → sets auth state → redirects to Home Page
+- If already signed in, redirects to Home automatically
 
 ---
 
-## 4. Wireframe 2: Dashboard
+## 4. Wireframe 2: Home Page (Main Task View)
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│  [Home]  [Tasks]                                      [🌙] [Logout]  │
+│  SIDEBAR             |  MAIN CONTENT                                     │
 ├────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Dashboard                                                     │
-│                                                                   │
-│   ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌──────────┐ ┌───────────┐  │
-│   │  Total    │ │  Active   │ │ Completed │ │  Overdue  │ │ High Prio  │  │
-│   │    25     │ │    18    │ │     7     │ │     3     │ │     5      │  │
-│   └──────────┘ └──────────┘ └───────────┘ └──────────┘ └───────────┘  │
-│                                                                   │
-│   ┌───────────────────────────────────────────────────────┐  │
-│   │                                                              │  │
-│   │   🤖 AI Task Summary                                            │  │
-│   │                                                              │  │
-│   │   You have 25 tasks. 3 are overdue and 5 are high          │  │
-│   │   priority. Consider focusing on the overdue items       │  │
-│   │   first, especially the high-priority ones.               │  │
-│   │                                                               │  │
-│   │   ┌──────────────────────┐                                 │  │
-│   │   │ Generate New Summary   │                                 │  │
-│   │   └──────────────────────┘                                 │  │
-│   │                                                               │  │
-│   └───────────────────────────────────────────────────────┘  │
-│                                                                   │
+│  Categories         |  My Tasks                                         │
+│                     |                                                   │
+│  [▽] All            |  Filter: [All v] [Done v] [Not Done v]           │
+│  [ ] Work           |                                                    │
+│  [ ] Personal       |  Add New Task:                                    │
+│  [ ] Shopping       |  ┌──────────────────────┐ ┌───────────┐ ┌───────┐    │
+│  [ ] Study         |  │ Task name...            │ │ Category v │ │ Add  │    │
+│                     |  └──────────────────────┘ └───────────┘ └───────┘    │
+│                   |                                                    │
+│                    |  ┌───────────────────────────────────────────┐   │
+│                    |  │  ☐  Buy groceries          [Shopping]    🗑   │   │
+│                    |  ├───────────────────────────────────────────┤   │
+│                    |  │  ✓  Read documentation    [Study]       🗑   │   │
+│                    |  ├───────────────────────────────────────────┤   │
+│                    |  │  ☐  Setup CI/CD pipeline   [Work]        🗑   │   │
+│                    |  └───────────────────────────────────────────┘   │
+│                    |                                                    │
+│                    |  Leatend:  ☐ = Active  ✓ = Completed  🗑 = Delete     │
 └────────────────────────────────────────────────────────────┘
 ```
 
 **Components:**
-- **Navigation Bar**: Home, Tasks links + Theme toggle (🌙) + Logout
-- **Statistics Cards**: 5 cards showing Total, Active, Completed, Overdue, High Priority counts
-- **AI Summary Panel**: Displays generated summary text + "Generate New Summary" button
-
----
-
-## 5. Wireframe 3: Task List
-
-```
-┌────────────────────────────────────────────────────────────┐
-│  [Home]  [Tasks]                                      [🌙] [Logout]  │
-├────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   My Tasks                                       [+ Add Task]   │
-│                                                                   │
-│   Filter: [All v]  Priority: [All v]  Status: [All v]           │
-│                                                                    │
-│   ┌───────────────────────────────────────────────────────┐  │
-│   │  ☐  Complete project report          [HIGH]  Due: Aug 15  ✏ �• │  │
-│   ├───────────────────────────────────────────────────────┤  │
-│   │  ☐  Buy groceries                    [LOW]   Due: Jul 30  ✏ �• │  │
-│   │                                                🔴 OVERDUE     │  │
-│   ├───────────────────────────────────────────────────────┤  │
-│   │  ✓  Read documentation              [MED]                ✏�• │  │
-│   │                                                              │  │
-│   ├───────────────────────────────────────────────────────┤  │
-│   │  ☐  Setup CI/CD pipeline            [HIGH]  Due: Aug 01  ✏�• │  │
-│   └───────────────────────────────────────────────────────┘  │
-│                                                                  │
-│   Legend:  ☐ = Active  ✓ = Completed  ✏ = Edit  �• = Delete             │
-│             🔴 = Overdue indicator                                     │
-└────────────────────────────────────────────────────────────┘
-```
-
-**Components:**
-- **Navigation Bar**: Same as dashboard
-- **Page Title**: "My Tasks" + "Add Task" button
-- **Filter Bar**: Dropdowns for filtering by priority and status
-- **Task List Items**: Each item shows:
+- **Sidebar (CategorySidebar)**: Lists all categories derived from tasks; "All" option resets filter
+- **Filter Bar**: Status filter buttons (All / Done / Not Done)
+- **Add Task Form**: Inline form with task name input + category dropdown + Add button
+- **Task List**: Each item shows:
   - Status indicator (☐ active / ✓ completed)
-  - Task title
-  - Priority badge (HIGH/MED/LOW)
-  - Due date (if set)
-  - Overdue indicator (🔴) when past due
-  - Edit (✏) and Delete (�•) actions
+  - Task title (strikethrough when completed)
+  - Category badge
+  - Delete button (🗑)
 
 ---
 
-## 6. Wireframe 4: Task Form (Create/Edit Modal)
+## 5. Wireframe 3: Confirm Delete Modal
 
 ```
 ┌────────────────────────────────────────┐
-│                                        │
-│   Create New Task                      [x]  │
 │                                          │
-│   Title *                                │
-│   ┌─────────────────────────────────┐  │
-│   │                                     │  │
-│   └─────────────────────────────────┘  │
+│   Delete Task                         [x]  │
 │                                          │
-│   Description (optional)                   │
-│   ┌─────────────────────────────────┐  │
-│   │                                      │  │
-│   │                                       │  │
-│   └─────────────────────────────────┘  │
+│   Are you sure you want to delete          │
+│   this task?                              │
 │                                          │
-│   Priority               Due Date          │
-│   ┌─────────────┐   ┌─────────────┐  │
-│   │  Medium    v  │   │  yyyy-mm-dd  │  │
-│   └─────────────┘   └─────────────┘  │
+│   "Task title here"                       │
 │                                          │
-│   ┌──────────────┐  ┌──────────────┐  │
-│   │    Cancel     │  │  Create Task  │  │
-│   └──────────────┘  └──────────────┘  │
+│   ┌──────────────┐  ┌──────────────┐   │
+│   │    Cancel     │  │    Delete    │   │
+│   └──────────────┘  └──────────────┘   │
 │                                          │
 └────────────────────────────────────────┘
 ```
 
 **Components:**
-- **Modal Header**: "Create New Task" / "Edit Task" + close button
-- **Title Field**: Required text input (max 100 chars)
-- **Description Field**: Optional textarea (max 500 chars)
-- **Priority Dropdown**: Low/Medium/High (default: Medium)
-- **Due Date Picker**: Optional date selection
-- **Action Buttons**: Cancel (secondary) + Create/Save (primary)
+- **Modal Header**: "Delete Task" + close button (x)
+- **Confirmation Message**: "Are you sure you want to delete this task?"
+- **Task Title**: Displays the task being deleted
+- **Action Buttons**: Cancel (secondary) + Delete (danger/primary)
+
+**Behavior:**
+- Click "Delete" → removes task from list
+- Click "Cancel" or press Escape → closes modal, no change
+- Focus trapped inside modal
+- Backdrop click closes modal
 
 ---
 
-## 7. Wireframe 5: Dark Mode Variant
+## 6. Wireframe 4: Empty State
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│  Background: #1E1E2E                                                 │
-│────────────────────────────────────────────────────────────┤
-│  [Home]  [Tasks]                                      [☀️] [Logout]  │
+│  SIDEBAR             |  MAIN CONTENT                                     │
 ├────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Text: #FFFFFF                                                  │
-│   Cards: #2D2D44                                                  │
-│   Accent: #6C72CB                                                  │
-│   Borders: #3D3D5C                                                 │
-│                                                                    │
-│   ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌──────────┐ ┌───────────┐  │
-│   │  Total    │ │  Active   │ │ Completed │ │  Overdue  │ │ High Prio  │  │
-│   │    25     │ │    18    │ │     7     │ │     3     │ │     5      │  │
-│   └──────────┘ └──────────┘ └───────────┘ └──────────┘ └───────────┘  │
-│   (Cards use #2D2D44 background with #FFFFFF text)                   │
-│                                                                    │
+│  Categories         |  My Tasks                                         │
+│                     |                                                    │
+│  [▽] All            |  Filter: [All v]                                   │
+│                     |                                                    │
+│                     |                                                    │
+│                     |             📝                                     │
+│                     |         No tasks found.                           │
+│                     |      Add your first task above!                   │
+│                     |                                                    │
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Dark Mode Design Tokens:**
-
-| Element | Light Mode | Dark Mode |
-|---------|------------|-----------|
-| Background | #FEFEGE | #1E1E2E |
-| Card Background | #FFFFFF | #2D2D44 |
-| Text Primary | #1A1A1A | #FFFFFF |
-| Text Secondary | #6B7280 | #A0AEB8 |
-| Accent/Primary | #4A90E2 | #6C72CB |
-| Border | #E2E8F0 | #3D3D5C |
-| Danger (Overdue) | #EF4444 | #FF6B6B |
-| Success (Completed) | #22C55E | #4ADE80 |
+**Behavior:**
+- Shown when task list is empty (no, tasks added yet)
+- Shown when filters yield zero results (message adjusts: "No tasks match your filters.")
 
 ---
 
-## 8. User Flow Diagram
+## 7. User Flow Diagram
 
 ```mermaid
 flowchart TD
-    A[Login Page] -->|Authenticate| B[Dashboard]
-    B -->|View Stats| B[Dashboard]
-    B -->|Generate AI Summary| C1[AI Summary Panel]
-    B -->|Navigate to Tasks| C[Task List]
-    C -->|Click Add Task| D[Task Form - Create]
-    C -->|Click Edit| E[Task Form - Edit]
-    C -->|Click Delete| F[Confirmation Dialog]
-    C -->|Toggle Status| G[Update Task Status]
-    C -->|Filter| H[Filtered Task List]
-    D -->|Submit| C
-    E -->|Save| C
-    F -->|Confirm| C
-    B -->|Toggle Theme| I[Switch Light/Dark Mode]
+    A[Login Page] -->|Click Sign In| B[Home Page]
+    B -->|Add Task| C[Add Task Form]
+    C -->|Submit| B
+    B -->|Toggle Checkbox| D[Update Task Status]
+    D --> B
+    B -->|Click Delete| E[Confirm Modal]
+    E -->|Confirm| B
+    E -->|Cancel| B
+    B -->|Select Category| F[Filtered Task List]
+    B -->|Select Status Filter| F
+    F --> B
 ```
 
 ---
 
-## 9. Responsive Behavior
+## 8. Responsive Behavior
 
 | Breakpoint | Layout Changes |
 |------------|----------------|
-| Desktop (>1024px) | Full layout with side-by-side stats cards |
-| Tablet (768-1024px) | Stats cards wrap to 2 rows; task list full width |
-| Mobile (<768px) | Single column; stats stack vertically; hamburger nav |
+| Desktop (>1024px) | Sidebar + main content side by side |
+| Tablet (768-1024px) | Sidebar collapses to top bar; task list full width |
+| Mobile (<768px) | Single column; sidebar as dropdown; stacked layout |
 
 ---
 
-## 10. Interaction Notes
+## 9. Interaction Notes
 
 | Interaction | Behavior |
 |-------------|----------|
-| Task status toggle | Click checkbox → immediate API call + optimistic UI update |
-| Delete task | Confirmation dialog before deletion |
-| Form validation | Real-time validation on blur; disable submit if invalid |
-| AI summary | Loading state with skeleton; error state with retry |
-| Theme toggle | Instant switch with CSS transition; persist to localStorage |
-| Overdue indicator | Automatically shown when dueDate < today && !completed |
+| Task status toggle | Click checkbox → immediate state update; visual strikethrough |
+| Delete task | Confirmation modal before deletion |
+| Add task validation | Real-time validation; disable submit if invalid |
+| Category selection | Highlight active category in sidebar |
+| Status filter | Highlight active filter button |
+| Combined filters | Both status AND category applied simultaneously |
+| Empty state | Friendly message when no tasks match |
+| Keyboard navigation | Tab through interactive elements; Enter/Space to activate |
+
+---
+
+## 10. Accessibility Requirements
+
+| Element | Requirement |
+|---------|-------------|
+| Confirm Modal | `aria-modal="true"`, focus trap, Escape to close |
+| Checkbox | `aria-label` with task title |
+| Delete button | `aria-label="Delete [task title]"` |
+| Filter buttons | `aria-pressed` for active state |
+| Sidebar nav | `role="navigation"` with `aria-label` |
+| Form inputs | Associated `<label>` elements |
+
+---
+
+## 11. Design Tokens (Styling Guide)
+
+| Element | Value |
+|---------|-------|
+| Primary Color | #4A90E2 (buttons, active states) |
+| Danger Color | #EF4444 (delete button) |
+| Success Color | #22C55E (completed indicator) |
+| Background | #F9FAFB |
+| Card Background | #FFFFFF |
+| Text Primary | #1A1A1A |
+| Text Secondary | #6B7280 |
+| Border | #E2E8F0 |
+| Font Family | Inter, sans-serif |
+| Border Radius | 8px (cards), 4px (buttons/inputs) |
+| Spacing Unit | 8px base |
